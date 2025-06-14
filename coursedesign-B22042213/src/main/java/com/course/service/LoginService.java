@@ -3,7 +3,7 @@ package com.course.service;
 import com.course.pojo.PointObject;
 import com.course.utils.FileUtils;
 import com.course.utils.JsonUtils;
-import com.course.utils.PointUtils;
+import com.course.utils.DateUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -29,7 +29,7 @@ public class LoginService {
             }
             Date now = new Date();
             Date last = point.getLastActionDate().get("LOGIN");
-            if (last == null || !PointUtils.isSameDay(last, now)) {
+            if (last == null || !DateUtils.isSameDay(last, now)) {
                 point.setGrowScore((point.getGrowScore() == null ? 0 : point.getGrowScore()) + 1);
                 point.setScoreTotal(point.getGrowScore() + point.getExchangeScore());
                 point.getLastActionDate().put("LOGIN", now);

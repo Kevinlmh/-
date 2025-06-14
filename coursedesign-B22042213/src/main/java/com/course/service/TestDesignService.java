@@ -3,9 +3,10 @@ package com.course.service;
 import com.course.pojo.PointObject;
 import com.course.utils.FileUtils;
 import com.course.utils.JsonUtils;
-import com.course.utils.PointUtils;
+import com.course.utils.DateUtils;
 import org.springframework.stereotype.Service;
 
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -16,60 +17,60 @@ import java.util.Date;
 @Service
 public class TestDesignService {
 
-    // 示例：每次调用加1成长积分
     public void testDesign(int userId) {
         try {
             String file = FileUtils.readFile("score");
             PointObject pointObject = JsonUtils.jsonToPojo(file, PointObject.class);
-            if (pointObject == null) {
-                pointObject = new PointObject();
-                pointObject.setId(userId);
-                pointObject.setGrowScore(0);
-                pointObject.setExchangeScore(0);
-                pointObject.setScoreTotal(0);
-            }
-            Integer grow = pointObject.getGrowScore() == null ? 0 : pointObject.getGrowScore();
-            Integer total = pointObject.getScoreTotal() == null ? 0 : pointObject.getScoreTotal();
-            pointObject.setGrowScore(grow + 1);
-            pointObject.setScoreTotal(total + 1);
-            String content = JsonUtils.objectToJson(pointObject);
-            FileUtils.writeFile("score", content);
-            System.out.println("+++++积分计算方法+++++");
+
+            pointObject.setGrowScore(pointObject.getGrowScore() + 1);
+            pointObject.setScoreTotal(pointObject.getScoreTotal() + 1);
+
+            FileUtils.writeFile("score", JsonUtils.objectToJson(pointObject));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    // 可兑换积分有效期清零
     public void clearExpiredExchangeScore(int userId) {
         try {
             String file = FileUtils.readFile("score");
-            PointObject point = JsonUtils.jsonToPojo(file, PointObject.class);
-            if (point != null && point.getExchangeScoreStartDate() != null) {
-                if (PointUtils.isOverOneYear(point.getExchangeScoreStartDate(), new Date())) {
-                    point.setExchangeScore(0);
-                    point.setExchangeScoreStartDate(null);
-                    point.setScoreTotal(point.getGrowScore());
-                    FileUtils.writeFile("score", JsonUtils.objectToJson(point));
+            PointObject pointObject = JsonUtils.jsonToPojo(file, PointObject.class);
+
+            Date startDate = pointObject.getExchangeScoreStartDate();
+            if (startDate != null) {
+                Calendar cal = Calendar.getInstance();
+                cal.setTime(startDate);
+                cal.add(Calendar.YEAR, 1);
+
+                if (new Date().after(cal.getTime())) {
+                    pointObject.setScoreTotal(pointObject.getScoreTotal() - pointObject.getExchangeScore());
+                    pointObject.setExchangeScore(0);
+                    pointObject.setExchangeScoreStartDate(null);
                 }
+
+                FileUtils.writeFile("score", JsonUtils.objectToJson(pointObject));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
-    // 月度成长积分评定
     public String evaluateLevel(int userId) {
         try {
             String file = FileUtils.readFile("score");
-            PointObject point = JsonUtils.jsonToPojo(file, PointObject.class);
-            int grow = point != null && point.getGrowScore() != null ? point.getGrowScore() : 0;
-            if (grow <= 10) return "C";
-            else if (grow <= 25) return "B";
-            else return "A";
+            PointObject pointObject = JsonUtils.jsonToPojo(file, PointObject.class);
+            int growScore = pointObject.getGrowScore();
+
+            if (growScore >= 30) {
+                return "A";
+            } else if (growScore >= 10) {
+                return "B";
+            } else {
+                return "C";
+            }
         } catch (Exception e) {
             e.printStackTrace();
+            return "C";
         }
-        return "C";
     }
 }

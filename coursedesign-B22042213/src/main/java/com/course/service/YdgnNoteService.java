@@ -3,7 +3,7 @@ package com.course.service;
 import com.course.pojo.PointObject;
 import com.course.utils.FileUtils;
 import com.course.utils.JsonUtils;
-import com.course.utils.PointUtils;
+import com.course.utils.DateUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -29,7 +29,7 @@ public class YdgnNoteService {
             }
             Date now = new Date();
             Date last = point.getLastActionDate().get("YDGN");
-            if (last == null || !PointUtils.isWithinMonths(last, now, 3)) {
+            if (last == null || !DateUtils.isWithinMonths(last, now, 3)) {
                 point.setExchangeScore(point.getExchangeScore() + 2);
                 if (point.getExchangeScoreStartDate() == null) {
                     point.setExchangeScoreStartDate(now);

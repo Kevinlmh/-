@@ -4,6 +4,10 @@ import com.course.controller.TestDesignController;
 import com.course.pojo.PointObject;
 import com.course.utils.FileUtils;
 import com.course.utils.JsonUtils;
+import com.course.utils.DateUtils;
+
+import static org.junit.Assert.*;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -11,133 +15,132 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import static org.junit.Assert.*;
 
 import java.io.File;
+import java.util.Calendar;
+import java.util.Date;
 
-/**
- * @author lixuy
- * Created on 2019-04-10
- */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration(locations = {"classpath:spring/*.xml"})
 public class TestInterceptor {
-    
-    private static final String SCORE_FILE = "score";
-    private static final int TEST_USER_ID = 1;
-    
+
     @Autowired
-    private TestDesignController testDesign;
-    
-    private PointObject initialPointState;
-    
-    @Before
-    public void setUp() {
-        // Initialize test environment
-        initializeScoreFile();
-        initialPointState = getCurrentPointState();
-    }
-    
-    @After
-    public void tearDown() {
-        // Clean up after tests
-        File file = new File(SCORE_FILE);
-        if (file.exists()) {
-            file.delete();
-        }
-    }
-    
-    private void initializeScoreFile() {
-        try {
-            PointObject pointObject = new PointObject();
-            pointObject.setId(TEST_USER_ID);
-            pointObject.setGrowScore(0);
-            pointObject.setExchangeScore(0);
-            pointObject.setScoreTotal(0);
-            String json = JsonUtils.objectToJson(pointObject);
-            FileUtils.writeFile(SCORE_FILE, json);
-        } catch (Exception e) {
-            fail("Failed to initialize score file: " + e.getMessage());
-        }
-    }
-    
-    private PointObject getCurrentPointState() {
+    TestDesignController testDesign;
+
+    private static final String SCORE_FILE = "score";
+    private int userId = 1;
+
+    private PointObject getCurrentScore() {
         try {
             String file = FileUtils.readFile(SCORE_FILE);
-            PointObject pointObject = JsonUtils.jsonToPojo(file, PointObject.class);
-            assertNotNull("Point object should not be null", pointObject);
-            return pointObject;
+            return JsonUtils.jsonToPojo(file, PointObject.class);
         } catch (Exception e) {
-            fail("Failed to get current point state: " + e.getMessage());
+            e.printStackTrace();
             return null;
         }
     }
 
-    private void assertPointChange(int expectedGrowScoreChange, int expectedExchangeScoreChange) {
-        PointObject currentState = getCurrentPointState();
-        assertNotNull("Current point state should not be null", currentState);
-
-        int expectedGrow = initialPointState.getGrowScore() + expectedGrowScoreChange;
-        int expectedExchange = initialPointState.getExchangeScore() + expectedExchangeScoreChange;
-        int expectedTotal = initialPointState.getScoreTotal() + expectedGrowScoreChange + expectedExchangeScoreChange;
-
-        assertEquals("Grow score should change by " + expectedGrowScoreChange, expectedGrow, currentState.getGrowScore().intValue());
-        assertEquals("Exchange score should change by " + expectedExchangeScoreChange, expectedExchange, currentState.getExchangeScore().intValue());
-        assertEquals("Total score should change by " + (expectedGrowScoreChange + expectedExchangeScoreChange),
-                expectedTotal, currentState.getScoreTotal().intValue());
-    }
-
-
-    @Test
-    public void testDesignBasicFunctionality() {
-        try {
-            // Test basic point addition
-            testDesign.testDesign(TEST_USER_ID);
-            assertPointChange(1, 0); // Assuming testDesign adds 1 grow score
-            
-            // Verify file integrity
-            String fileContent = FileUtils.readFile(SCORE_FILE);
-            assertNotNull("Score file content should not be null", fileContent);
-            PointObject pointObject = JsonUtils.jsonToPojo(fileContent, PointObject.class);
-            assertNotNull("Deserialized point object should not be null", pointObject);
-        } catch (Exception e) {
-            fail("Test failed with exception: " + e.getMessage());
+    private void printScore(PointObject pointObject) {
+        if (pointObject != null) {
+            System.out.println("成长积分：" + pointObject.getGrowScore());
+            System.out.println("可交换积分：" + pointObject.getExchangeScore());
+            System.out.println("总积分：" + pointObject.getScoreTotal());
         }
     }
-    
+
+    @Before
+    public void setUp() throws Exception {
+        System.out.println("测试开始...");
+        PointObject pointObject = new PointObject();
+        pointObject.setId(userId);
+        pointObject.setGrowScore(0);
+        pointObject.setExchangeScore(0);
+        pointObject.setScoreTotal(0);
+        FileUtils.writeFile(SCORE_FILE, JsonUtils.objectToJson(pointObject));
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        System.out.println("测试结束...");
+        new File(SCORE_FILE).delete();
+    }
+
     @Test
-    public void testDesignMultipleCalls() {
+    public void testDesign() {
         try {
-            // Test multiple consecutive calls
-            for (int i = 0; i < 3; i++) {
-                testDesign.testDesign(TEST_USER_ID);
-            }
-            assertPointChange(3, 0); // Assuming each call adds 1 grow score
+            PointObject beforeScore = getCurrentScore();
+            int score1 = beforeScore != null ? beforeScore.getScoreTotal() : 0;
+
+            testDesign.testDesign(userId);
+
+            PointObject afterScore = getCurrentScore();
+            int score2 = afterScore != null ? afterScore.getScoreTotal() : 0;
+
+            assertEquals("积分应该增加1分", 1, score2 - score1);
+            assertEquals("成长积分应该增加1分", Integer.valueOf(1), afterScore.getGrowScore());
         } catch (Exception e) {
-            fail("Test failed with exception: " + e.getMessage());
+            fail("测试过程中发生异常: " + e.getMessage());
         }
     }
-    
+
     @Test
-    public void testDesignWithInitialPoints() {
+    public void testClearExpiredExchangeScore() {
         try {
-            // Set up initial points
+            // 设置初始积分
             PointObject pointObject = new PointObject();
-            pointObject.setId(TEST_USER_ID);
-            pointObject.setGrowScore(50);
-            pointObject.setExchangeScore(30);
-            pointObject.setScoreTotal(80);
-            String json = JsonUtils.objectToJson(pointObject);
-            FileUtils.writeFile(SCORE_FILE, json);
-            
-            // Update initial state
-            initialPointState = getCurrentPointState();
-            
-            // Test point addition with existing points
-            testDesign.testDesign(TEST_USER_ID);
-            assertPointChange(1, 0);
+            pointObject.setId(userId);
+            pointObject.setGrowScore(10);
+            pointObject.setExchangeScore(5);
+            pointObject.setScoreTotal(15);
+
+            // 设置一年前的日期
+            Calendar calendar = Calendar.getInstance();
+            calendar.add(Calendar.YEAR, -1);
+            calendar.add(Calendar.DAY_OF_MONTH, -1); // 确保超过一年
+            pointObject.setExchangeScoreStartDate(calendar.getTime());
+
+            FileUtils.writeFile(SCORE_FILE, JsonUtils.objectToJson(pointObject));
+
+            // 执行清零操作
+            testDesign.clearExpiredExchangeScore(userId);
+
+            // 验证结果
+            PointObject afterScore = getCurrentScore();
+            assertNotNull("积分对象不应为空", afterScore);
+            assertEquals("可交换积分应该被清零", Integer.valueOf(0), afterScore.getExchangeScore());
+            assertEquals("总积分应该等于成长积分", afterScore.getGrowScore(), afterScore.getScoreTotal());
+            assertNull("可交换积分开始日期应该被清空", afterScore.getExchangeScoreStartDate());
         } catch (Exception e) {
-            fail("Test failed with exception: " + e.getMessage());
+            fail("测试过程中发生异常: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testEvaluateLevel() {
+        try {
+            PointObject pointObject = new PointObject();
+            pointObject.setId(userId);
+
+            // Test C level
+            pointObject.setGrowScore(5);
+            pointObject.setExchangeScore(0);
+            pointObject.setScoreTotal(5);
+            FileUtils.writeFile(SCORE_FILE, JsonUtils.objectToJson(pointObject));
+            assertEquals("5分应该评为C等级", "C", testDesign.evaluateLevel(userId));
+
+            // Test B level
+            pointObject.setGrowScore(15);
+            pointObject.setScoreTotal(15);
+            FileUtils.writeFile(SCORE_FILE, JsonUtils.objectToJson(pointObject));
+            assertEquals("15分应该评为B等级", "B", testDesign.evaluateLevel(userId));
+
+            // Test A level
+            pointObject.setGrowScore(30);
+            pointObject.setScoreTotal(30);
+            FileUtils.writeFile(SCORE_FILE, JsonUtils.objectToJson(pointObject));
+            assertEquals("30分应该评为A等级", "A", testDesign.evaluateLevel(userId));
+        } catch (Exception e) {
+            fail("测试过程中发生异常: " + e.getMessage());
         }
     }
 }

@@ -3,7 +3,7 @@ package com.course.service;
 import com.course.pojo.PointObject;
 import com.course.utils.FileUtils;
 import com.course.utils.JsonUtils;
-import com.course.utils.PointUtils;
+import com.course.utils.DateUtils;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
@@ -31,7 +31,7 @@ public class EvaluateReportService {
             Date last = point.getLastActionDate().get("EVALUATEREPORT");
             // 需已填写个人资料且血糖记录数>=10，每年最多1次
             if (point.isFilledInformation() && point.getDailyActionCount().values().stream().mapToInt(Integer::intValue).sum() >= 10
-                && (last == null || !PointUtils.isSameYear(last, now))) {
+                && (last == null || !DateUtils.isSameYear(last, now))) {
                 point.setGrowScore(point.getGrowScore() + 2);
                 point.setScoreTotal(point.getGrowScore() + point.getExchangeScore());
                 point.getLastActionDate().put("EVALUATEREPORT", now);

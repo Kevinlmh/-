@@ -28,6 +28,7 @@ public class PointObject implements Serializable{
     private Map<String, Date> lastActionDate = new HashMap<>(); // 记录各行为最后一次积分时间
     private Map<String, Integer> dailyActionCount = new HashMap<>(); // 记录每日行为次数
     private Date exchangeScoreStartDate; // 可兑换积分起始时间
+    private Integer validBloodSugarCount = 0; // 记录有效血糖值（>3）的次数
 
     public Integer getId() {
         return id;
@@ -95,5 +96,17 @@ public class PointObject implements Serializable{
     }
     public void setExchangeScoreStartDate(Date exchangeScoreStartDate) {
         this.exchangeScoreStartDate = exchangeScoreStartDate;
+    }
+
+    public Integer getValidBloodSugarCount() {
+        return validBloodSugarCount;
+    }
+
+    public void setValidBloodSugarCount(Integer validBloodSugarCount) {
+        this.validBloodSugarCount = validBloodSugarCount;
+    }
+
+    public void incrementValidBloodSugarCount() {
+        this.validBloodSugarCount = (this.validBloodSugarCount == null ? 0 : this.validBloodSugarCount) + 1;
     }
 }

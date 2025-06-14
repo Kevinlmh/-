@@ -30,10 +30,7 @@ public class YdgnNoteService {
             Date now = new Date();
             Date last = point.getLastActionDate().get("YDGN");
             if (last == null || !DateUtils.isWithinMonths(last, now, 3)) {
-                point.setExchangeScore(point.getExchangeScore() + 2);
-                if (point.getExchangeScoreStartDate() == null) {
-                    point.setExchangeScoreStartDate(now);
-                }
+                point.setGrowScore(point.getGrowScore() + 2);
                 point.setScoreTotal(point.getGrowScore() + point.getExchangeScore());
                 point.getLastActionDate().put("YDGN", now);
                 FileUtils.writeFile("score", JsonUtils.objectToJson(point));

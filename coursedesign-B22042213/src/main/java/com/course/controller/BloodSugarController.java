@@ -15,8 +15,8 @@ public class BloodSugarController {
     @Autowired
     private BloodSugarService bloodSugarService;
 
-    public void bloodSugar(int userId) {
-        bloodSugarService.bloodSugar(userId);
+    public void bloodSugar(int userId, double bloodSugarValue) {
+        bloodSugarService.bloodSugar(userId, bloodSugarValue);
         System.out.println("======bloodSugar方法执行并处理积分======");
     }
 }

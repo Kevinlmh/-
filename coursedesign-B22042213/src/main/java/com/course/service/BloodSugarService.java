@@ -16,7 +16,7 @@ import java.util.Date;
 @Service
 public class BloodSugarService {
 
-    public void bloodSugar(int userId) {
+    public void bloodSugar(int userId, double bloodSugarValue) {
         try {
             String file = FileUtils.readFile("score");
             PointObject point = JsonUtils.jsonToPojo(file, PointObject.class);
@@ -26,14 +26,13 @@ public class BloodSugarService {
                 point.setGrowScore(0);
                 point.setExchangeScore(0);
                 point.setScoreTotal(0);
+                point.setValidBloodSugarCount(0);
             }
-            Date now = new Date();
-            String today = new SimpleDateFormat("yyyyMMdd").format(now);
-            int count = point.getDailyActionCount().getOrDefault(today + "_BLOODSUGAR", 0);
-            if (count < 3) {
+            // 只有当血糖值大于3时才积分
+            if (bloodSugarValue > 3) {
                 point.setGrowScore(point.getGrowScore() + 1);
                 point.setScoreTotal(point.getGrowScore() + point.getExchangeScore());
-                point.getDailyActionCount().put(today + "_BLOODSUGAR", count + 1);
+                point.incrementValidBloodSugarCount();
                 FileUtils.writeFile("score", JsonUtils.objectToJson(point));
             }
         } catch (Exception e) {

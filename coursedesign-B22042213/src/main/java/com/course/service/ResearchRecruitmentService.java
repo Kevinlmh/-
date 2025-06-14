@@ -26,11 +26,11 @@ public class ResearchRecruitmentService {
                 point.setExchangeScore(0);
                 point.setScoreTotal(0);
             }
-            Date now = new Date();
-            point.setExchangeScore(point.getExchangeScore() + 8);
-            if (point.getExchangeScoreStartDate() == null) {
-                point.setExchangeScoreStartDate(now);
+            // 只有在当前可交换积分为0时才设置开始日期
+            if (point.getExchangeScore() == 0) {
+                point.setExchangeScoreStartDate(new Date());
             }
+            point.setExchangeScore(point.getExchangeScore() + 8);
             point.setScoreTotal(point.getGrowScore() + point.getExchangeScore());
             FileUtils.writeFile("score", JsonUtils.objectToJson(point));
         } catch (Exception e) {

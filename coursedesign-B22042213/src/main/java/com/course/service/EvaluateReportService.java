@@ -26,11 +26,12 @@ public class EvaluateReportService {
                 point.setGrowScore(0);
                 point.setExchangeScore(0);
                 point.setScoreTotal(0);
+                point.setValidBloodSugarCount(0);
             }
             Date now = new Date();
             Date last = point.getLastActionDate().get("EVALUATEREPORT");
-            // 需已填写个人资料且血糖记录数>=10，每年最多1次
-            if (point.isFilledInformation() && point.getDailyActionCount().values().stream().mapToInt(Integer::intValue).sum() >= 10
+            // 需已填写个人资料且有效血糖记录数>=10，每年最多1次
+            if (point.isFilledInformation() && point.getValidBloodSugarCount() >= 10
                 && (last == null || !DateUtils.isSameYear(last, now))) {
                 point.setGrowScore(point.getGrowScore() + 2);
                 point.setScoreTotal(point.getGrowScore() + point.getExchangeScore());

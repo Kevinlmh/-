@@ -26,9 +26,11 @@ public class ExtendedActivityService {
                 point.setExchangeScore(0);
                 point.setScoreTotal(0);
             }
-            Date now = new Date();
+            // 只有在当前可交换积分为0时才设置开始日期
+            if (point.getExchangeScore() == 0) {
+                point.setExchangeScoreStartDate(new Date());
+            }
             point.setExchangeScore(point.getExchangeScore() + 5);
-            if (point.getExchangeScoreStartDate() == null) point.setExchangeScoreStartDate(now);
             point.setScoreTotal(point.getGrowScore() + point.getExchangeScore());
             FileUtils.writeFile("score", JsonUtils.objectToJson(point));
         } catch (Exception e) {
